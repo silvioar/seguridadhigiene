@@ -1,0 +1,208 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+    @page { size: A4; margin: 1cm; }
+    body { font-family: Helvetica, sans-serif; font-size: 11px; color: #333; }
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
+    .meta { font-size: 9px; color: #7f8c8d; text-align: right; margin-top: 5px; }
+    h1 { font-size: 18px; color: #2c3e50; margin: 0; }
+    h2 { font-size: 13px; color: #2980b9; margin-top: 15px; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; text-transform: uppercase; }
+    
+    /* Layout Tables */
+    table.layout { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    table.layout td { vertical-align: top; padding: 5px; }
+    
+    /* Data Tables */
+    table.data { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10px; }
+    table.data th, table.data td { border: 1px solid #bdc3c7; padding: 4px; text-align: left; }
+    table.data th { background-color: #ecf0f1; font-weight: bold; color: #2c3e50; }
+    
+    /* KPI Box */
+    .kpi-box {
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        padding: 8px;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    .kpi-title { font-size: 9px; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 14px; font-weight: bold; color: #2c3e50; margin-top: 2px; }
+    .text-success { color: #27ae60; }
+    .text-danger { color: #c0392b; }
+    .text-warning { color: #d35400; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>Tablero de Control - Seguridad e Higiene</h1>
+        <div class="meta">
+            Generado por: {{ request.user.get_full_name|default:request.user.username }}<br>
+            Fecha: {% now "d/m/Y H:i" %}
+        </div>
+    </div>
+
+    <!-- A. CARGA DE TRABAJO -->
+    <h2>A. Carga de Trabajo</h2>
+    <table class="layout">
+        <tr>
+            <td width="20%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Total Incidentes</div>
+                    <div class="kpi-value">{{ total_incidents }}</div>
+                </div>
+            </td>
+            <td width="20%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Incid. / Visita</div>
+                    <div class="kpi-value">{{ incidents_per_visit }}</div>
+                </div>
+            </td>
+            <td width="20%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Análisis 3-Why</div>
+                    <div class="kpi-value">{{ pct_full_analysis }}%</div>
+                </div>
+            </td>
+            <td width="20%">
+                <div class="kpi-box">
+                    <div class="kpi-title">% Evidencia</div>
+                    <div class="kpi-value">{{ pct_evidence }}%</div>
+                </div>
+            </td>
+            <td width="20%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Acciones / Inc.</div>
+                    <div class="kpi-value">{{ actions_per_incident }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- B. RIESGO Y PREVENCION -->
+    <h2>B. Riesgo y Prevención</h2>
+    <table class="layout">
+        <tr>
+            <td width="40%">
+                <div class="kpi-box" style="margin-bottom: 10px; border-left: 3px solid #c0392b;">
+                    <div class="kpi-title">Riesgo Alto + Crítico</div>
+                    <div class="kpi-value text-danger">{{ pct_high_critical }}%</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-title">Riesgo Alto / Bajo Dominio</div>
+                    <div class="kpi-value text-warning">{{ pct_high_risk_low_mastery }}%</div>
+                </div>
+            </td>
+            <td width="60%">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Incidentes por Riesgo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in incidents_by_risk %}
+                        <tr>
+                            <td>{{ item.risk_level }}</td>
+                            <td align="right" width="30">{{ item.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+    
+    <table class="data">
+        <thead>
+            <tr>
+                <th width="70%">Top 5 Sectores con más Incidentes</th>
+                <th width="30%" align="right">Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sec in top_sectors %}
+            <tr>
+                <td>{{ sec.name }}</td>
+                <td align="right">{{ sec.count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2">-</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- C. GESTION DE ACCIONES -->
+    <h2>C. Gestión de Acciones</h2>
+    <table class="layout">
+        <tr>
+            <td width="25%">
+                <div class="kpi-box" style="border-left: 3px solid #27ae60;">
+                    <div class="kpi-title">Tasa de Cierre</div>
+                    <div class="kpi-value text-success">{{ closure_rate }}%</div>
+                </div>
+            </td>
+            <td width="25%">
+                 <div class="kpi-box">
+                    <div class="kpi-title">Abiertas</div>
+                    <div class="kpi-value">{{ open_actions }}</div>
+                </div>
+            </td>
+            <td width="25%">
+                 <div class="kpi-box">
+                    <div class="kpi-title">T. Promedio Cierre</div>
+                    <div class="kpi-value">{{ avg_closure_time|default:"-" }} d</div>
+                </div>
+            </td>
+            <td width="25%">
+                 <div class="kpi-box" style="border-left: 3px solid #d35400;">
+                    <div class="kpi-title">Vencidas (>14d)</div>
+                    <div class="kpi-value text-warning">{{ pct_overdue }}%</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <table class="data" style="width: 60%;">
+        <thead>
+            <tr>
+                <th width="70%">Pendientes por Responsable (Top 5)</th>
+                <th width="30%" align="right">Cant.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in open_actions_by_owner %}
+            <tr>
+                <td>{{ item.owner_name|default:"Sin asignar" }}</td>
+                <td align="right">{{ item.count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2">No hay acciones pendientes.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- D. EFICACIA -->
+    <h2>D. Eficacia y Mejora</h2>
+    <table class="layout">
+        <tr>
+            <td width="50%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Brecha Eficacia (Teórica vs Práctica)</div>
+                    <div class="kpi-value">{{ efficacy_drop_count }} <span style="font-size:10px; font-weight:normal;">acciones</span></div>
+                    <div style="font-size: 8px; color: #666; margin-top:2px;">Fallaron en la práctica</div>
+                </div>
+            </td>
+            <td width="50%">
+                <div class="kpi-box">
+                    <div class="kpi-title">Incidentes con Propuesta de Mejora</div>
+                    <div class="kpi-value text-success">{{ pct_improvement }}%</div>
+                    <div style="font-size: 8px; color: #666; margin-top:2px;">Oportunidad sistémica detectada</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

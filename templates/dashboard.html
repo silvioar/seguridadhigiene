@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}Tablero | SyH{% endblock %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <!-- Header & Title -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4">
+        <h1 class="h3 fw-bold text-dark">Tablero de Control</h1>
+        <div class="text-muted small">
+            <i class="bi bi-clock"></i> Actualizado: {% now "d/m/Y H:i" %}
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card p-3 mb-5 bg-white border-0 shadow-sm">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-6 col-md-3">
+                <select name="company" class="form-select form-select-sm border-light bg-light text-muted">
+                    <option value="">Empresa...</option>
+                    {% for c in companies %}
+                    <option value="{{ c.name }}" {% if request.GET.company == c.name %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="site" class="form-select form-select-sm border-light bg-light text-muted">
+                    <option value="">Obra...</option>
+                    {% for s in sites %}
+                    <option value="{{ s.name }}" {% if request.GET.site == s.name %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                 <input type="date" name="date_from" class="form-control form-control-sm border-light bg-light text-muted" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-6 col-md-2">
+                 <input type="date" name="date_to" class="form-control form-control-sm border-light bg-light text-muted" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-12 col-md-auto d-flex gap-2 ms-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary px-3">Filtrar</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-link text-muted text-decoration-none">Limpiar</a>
+                <a href="{% url 'dashboard_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-primary" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- === PART 1: VISUAL OVERVIEW (The "Old" Graphs) === -->
+    <div class="mb-5">
+        <h6 class="text-uppercase text-secondary fw-bold mb-3 ls-1">Panorama General</h6>
+        
+        <!-- Top 4 General Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6 col-xl-3 mb-3">
+                <div class="card kpi-card h-100 bg-primary text-white">
+                    <div class="kpi-title text-white-50">Total Incidentes</div>
+                    <div class="kpi-value text-white">{{ total_incidents }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-3">
+                <div class="card kpi-card h-100">
+                    <div class="kpi-title">Acciones Abiertas</div>
+                    <div class="kpi-value text-danger">{{ open_actions }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-3">
+                <div class="card kpi-card h-100">
+                    <div class="kpi-title">Tasa de Cierre</div>
+                    <div class="kpi-value text-success">{{ closure_rate }}%</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-3">
+                <div class="card kpi-card h-100">
+                    <div class="kpi-title">Cierre Promedio</div>
+                    <div class="kpi-value">{{ avg_closure_time|default:"-" }} días</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Charts -->
+        <div class="row g-4">
+            <!-- Time Chart -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="m-0 text-primary fw-bold">Evolución Temporal</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <canvas id="mainTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Type Chart -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="m-0 text-primary fw-bold">Tipos de Incidente</h6>
+                    </div>
+                    <div class="card-body">
+                         <div style="height: 300px;">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <hr class="my-5 border-2">
+
+    <!-- === PART 2: ADVANCED KPI MATRIX (The "New" Sections) === -->
+    
+    <!-- SECTION A: CARGA DE TRABAJO -->
+    <h6 class="text-uppercase text-secondary fw-bold mb-3 ls-1 border-bottom pb-2">A. Carga de Trabajo</h6>
+    <div class="row mb-5 g-3">
+        <!-- 1. Incidentes Detectados (Repeated context but grouped logically) -->
+        <div class="col-6 col-md-3 col-xl-2">
+            <div class="card kpi-card h-100 border-start border-4 border-primary">
+                <div class="kpi-title text-primary">Detectados</div>
+                <div class="kpi-value">{{ total_incidents }}</div>
+            </div>
+        </div>
+        <!-- 2. Incidentes por Visita -->
+        <div class="col-6 col-md-3 col-xl-2">
+            <div class="card kpi-card h-100">
+                <div class="kpi-title">Incid. / Visita</div>
+                <div class="kpi-value text-dark">{{ incidents_per_visit }}</div>
+            </div>
+        </div>
+        <!-- 3. % Analisis Completo -->
+        <div class="col-6 col-md-3 col-xl-2">
+             <div class="card kpi-card h-100">
+                <div class="kpi-title">Análisis 5-Why</div>
+                <div class="kpi-value {% if pct_full_analysis < 50 %}text-danger{% else %}text-success{% endif %}">
+                    {{ pct_full_analysis }}%
+                </div>
+            </div>
+        </div>
+        <!-- 4. % Evidencia -->
+        <div class="col-6 col-md-3 col-xl-2">
+             <div class="card kpi-card h-100">
+                <div class="kpi-title">Con Evidencia</div>
+                <div class="kpi-value text-dark">{{ pct_evidence }}%</div>
+            </div>
+        </div>
+        <!-- 5. Acciones generadas -->
+        <div class="col-6 col-md-3 col-xl-2">
+             <div class="card kpi-card h-100">
+                <div class="kpi-title">Acciones/Inc.</div>
+                <div class="kpi-value" style="color: #6c5ce7;">{{ actions_per_incident }}</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECTION B: RIESGO Y PREVENCION -->
+    <h6 class="text-uppercase text-secondary fw-bold mb-3 ls-1 border-bottom pb-2">B. Riesgo y Prevención</h6>
+    <div class="row mb-5 g-4">
+        <!-- 6. Grafico Riesgo -->
+        <div class="col-md-4 col-xl-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-3 text-muted small text-uppercase fw-bold">Perfil de Riesgo</h6>
+                    <div style="height: 180px;">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Risk -->
+        <div class="col-md-4 col-xl-3">
+             <div class="d-flex flex-column gap-3 h-100">
+                 <!-- 7. % Alto + Critico -->
+                 <div class="card kpi-card flex-grow-1 border-start border-4 border-danger">
+                    <div class="kpi-title text-danger">Riesgo Alto + Crítico</div>
+                    <div class="kpi-value text-danger">{{ pct_high_critical }}%</div>
+                    <small class="text-muted">Directa exposición grave</small>
+                 </div>
+                 <!-- 9. Dominio vs Riesgo -->
+                 <div class="card kpi-card flex-grow-1">
+                    <div class="kpi-title">Alto Riesgo / Bajo Dominio</div>
+                    <div class="kpi-value text-warning">{{ pct_high_risk_low_mastery }}%</div>
+                    <small class="text-muted">Falla de capacitación crítica</small>
+                 </div>
+             </div>
+        </div>
+
+        <!-- 8. Top Sectors -->
+        <div class="col-md-4 col-xl-3">
+             <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-subtitle text-muted small text-uppercase fw-bold">Top 5 Sectores</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 font-monospace small">
+                        <tbody>
+                            {% for sec in top_sectors %}
+                            <tr>
+                                <td class="ps-3">{{ sec.name }}</td>
+                                <td class="text-end pe-3 fw-bold">{{ sec.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="text-center text-muted">Sin datos</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+        
+        <!-- Top Sites -->
+        <div class="col-md-4 col-xl-3">
+             <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-subtitle text-muted small text-uppercase fw-bold">Top 5 Obras</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 font-monospace small">
+                         <tbody>
+                            {% for site in top_sites %}
+                            <tr>
+                                <td class="ps-3 text-truncate" style="max-width: 140px;" title="{{ site.visit__site__name }}">{{ site.visit__site__name }}</td>
+                                <td class="text-end pe-3 fw-bold">{{ site.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="text-center text-muted">Sin datos</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+    </div>
+
+
+    <!-- SECTION C: GESTION DE ACCIONES -->
+    <h6 class="text-uppercase text-secondary fw-bold mb-3 ls-1 border-bottom pb-2">C. Gestión de Acciones</h6>
+    <div class="row mb-5 g-4">
+        <!-- 10. % Cierre + Open Actions -->
+        <div class="col-md-3">
+            <div class="d-flex flex-column gap-3 h-100">
+                <div class="card kpi-card flex-grow-1 border-start border-4 border-success">
+                    <div class="kpi-title text-success">Acciones Cerradas</div>
+                    <div class="kpi-value text-success">{{ closure_rate }}%</div>
+                    <div class="progress progress-sm mt-2 w-100" style="height: 4px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ closure_rate }}%"></div>
+                    </div>
+                </div>
+                <div class="card kpi-card flex-grow-1">
+                    <div class="kpi-title">Acciones Abiertas</div>
+                    <div class="kpi-value text-dark">{{ open_actions }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Acciones por responsable -->
+        <div class="col-md-3">
+             <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-subtitle text-muted small text-uppercase fw-bold">Pendientes por Responsable</h6>
+                </div>
+                <div class="table-responsive h-100">
+                    <table class="table table-sm table-hover mb-0 font-monospace small">
+                        <tbody>
+                            {% for item in open_actions_by_owner %}
+                            <tr>
+                                <td class="ps-3">{{ item.owner_name|default:"Sin asignar" }}</td>
+                                <td class="text-end pe-3 fw-bold text-danger">{{ item.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="text-center text-muted py-4">Excelente! Todo al día.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </div>
+
+        <!-- 12 & 13. Tiempos -->
+        <div class="col-md-3">
+             <div class="d-flex flex-column gap-3 h-100">
+                 <div class="card kpi-card flex-grow-1">
+                    <div class="kpi-title">Tiempo Promedio Cierre</div>
+                    <div class="kpi-value text-dark">{{ avg_closure_time|default:"-" }}</div>
+                    <small class="text-muted">días de gestión</small>
+                 </div>
+                 <div class="card kpi-card flex-grow-1 border-start border-4 border-warning">
+                    <div class="kpi-title text-warning">Acciones Vencidas (>14d)</div>
+                    <div class="kpi-value text-warning">{{ pct_overdue }}%</div>
+                    <small class="text-muted">del total pendientes</small>
+                 </div>
+             </div>
+        </div>
+
+        <!-- Status Chart -->
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                     <h6 class="card-subtitle mb-3 text-muted small text-uppercase fw-bold">Estado General</h6>
+                     <div style="height: 180px;">
+                        <canvas id="actionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SECTION D: EFICACIA Y MEJORA -->
+    <h6 class="text-uppercase text-secondary fw-bold mb-3 ls-1 border-bottom pb-2">D. Eficacia y Mejora Continua</h6>
+    <div class="row mb-5 g-4">
+        <!-- 14. Eficacia -->
+        <div class="col-md-6">
+            <div class="card p-3 h-100 border-0 shadow-sm d-flex flex-row align-items-center gap-3">
+                <div class="bg-light rounded-circle p-3 text-secondary">
+                    <i class="fs-1 bi bi-clipboard-check"></i>
+                </div>
+                <div>
+                     <h6 class="text-muted text-uppercase small fw-bold mb-1">Brecha Eficacia (Teórica vs Práctica)</h6>
+                     <div class="fs-4 fw-bold text-dark">{{ efficacy_drop_count }} <small class="fs-6 text-muted fw-normal">acciones</small></div>
+                     <small class="text-muted">Acciones que parecían buenas en papel pero fallaron en campo.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 15. Mejora continua -->
+        <div class="col-md-6">
+             <div class="card p-3 h-100 border-0 shadow-sm d-flex flex-row align-items-center gap-3">
+                <div class="bg-light rounded-circle p-3 text-success">
+                    <i class="fs-1 bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                     <h6 class="text-muted text-uppercase small fw-bold mb-1">Incidentes con Propuesta de Mejora</h6>
+                     <div class="fs-4 fw-bold text-success">{{ pct_improvement }}%</div>
+                     <small class="text-muted">De los incidentes generaron una oportunidad de mejora sistémica.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- CHART JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const commonOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { usePointStyle: true, boxWidth: 6, font: { size: 10 } }
+            }
+        },
+        scales: {
+             x: { grid: { display: false } },
+             y: { grid: { borderDash: [2, 4] }, ticks: { display: false } }
+        }
+    };
+    
+    // For main time chart, we want Y axis keys
+    const timeOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+             x: { grid: { display: false } },
+             y: { grid: { borderDash: [2, 4] } }
+        }
+    };
+
+    // 0. Mini Time Chart (Sparkline)
+    new Chart(document.getElementById('miniTimeChart'), {
+        type: 'line',
+        data: {
+            labels: {{ time_labels|safe }},
+            datasets: [{
+                data: {{ time_data|safe }},
+                borderColor: '#3498db',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+
+    // 1. Main Time Chart
+    new Chart(document.getElementById('mainTimeChart'), {
+        type: 'line',
+        data: {
+            labels: {{ time_labels|safe }},
+            datasets: [{
+                label: 'Incidentes',
+                data: {{ time_data|safe }},
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4
+            }]
+        },
+        options: timeOptions
+    });
+
+    // 2. Risk Chart
+    new Chart(document.getElementById('riskChart'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ risk_labels|safe }},
+            datasets: [{
+                data: {{ risk_data|safe }},
+                backgroundColor: ['#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'], 
+                borderWidth: 0
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6, font: {size:10} } } }
+        }
+    });
+
+    // 3. Type Chart
+    new Chart(document.getElementById('typeChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ type_labels|safe }},
+            datasets: [{
+                label: 'Incidentes',
+                data: {{ type_data|safe }},
+                backgroundColor: '#95a5a6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            ...commonOptions,
+            indexAxis: 'y',
+            scales: {
+                 x: { grid: { display: false } },
+                 y: { grid: { borderDash: [2, 4], display: false }, ticks: { display: true, autoSkip: false } }
+            }
+        }
+    });
+
+    // 4. Action Chart
+    new Chart(document.getElementById('actionChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ status_labels|safe }},
+            datasets: [{
+                label: 'Acciones',
+                data: {{ status_data|safe }},
+                backgroundColor: ['#f1c40f', '#3498db', '#27ae60'],
+                borderRadius: 4
+            }]
+        },
+        options: commonOptions
+    });
+</script>
+{% endblock %}

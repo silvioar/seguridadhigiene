@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+    @page { size: A4; margin: 1cm; }
+    body { font-family: Helvetica, sans-serif; font-size: 12px; }
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+    .meta { font-size: 10px; color: #666; text-align: right; }
+    h1 { font-size: 18px; margin: 0; }
+    h2 { font-size: 14px; margin-top: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #2c3e50; }
+    .label { font-weight: bold; color: #555; }
+    .value { margin-bottom: 5px; }
+    .section { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px; }
+    th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+    th { background-color: #f1f1f1; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>Reporte de Incidente #{{ object.pk }}</h1>
+        <div class="meta">
+            Generado por: {{ request.user.get_full_name|default:request.user.username }}<br>
+            Fecha: {% now "d/m/Y H:i" %}
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+        <h2>Información General</h2>
+        <table style="border: none;">
+            <tr>
+                <td style="border: none; width: 50%;">
+                    <div class="label">Empresa</div>
+                    <div class="value">{{ object.visit.company.name }}</div>
+                </td>
+                <td style="border: none; width: 50%;">
+                    <div class="label">Obra</div>
+                    <div class="value">{{ object.visit.site.name }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: none;">
+                    <div class="label">Fecha del Incidente</div>
+                    <div class="value">{{ object.incident_date|date:"d/m/Y" }} {{ object.incident_time|time:"H:i" }}</div>
+                </td>
+                <td style="border: none;">
+                    <div class="label">Tipo de Incidente</div>
+                    <div class="value">{{ object.get_incident_type_display }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: none;">
+                    <div class="label">Nivel de Riesgo</div>
+                    <div class="value">{{ object.get_risk_level_display }}</div>
+                </td>
+                <td style="border: none;">
+                    <div class="label">Sector</div>
+                    <div class="value">{{ object.sector.name|default:object.sector_text|default:"-" }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Detalle del Evento</h2>
+        <div class="value" style="background: #f9f9f9; padding: 10px; border: 1px solid #eee;">
+            {{ object.description|linebreaksbr }}
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Análisis (5 Porqués)</h2>
+        {% if object.why_1 %}<div class="value"><strong>1. Por qué?</strong> {{ object.why_1 }}</div>{% endif %}
+        {% if object.why_2 %}<div class="value"><strong>2. Por qué?</strong> {{ object.why_2 }}</div>{% endif %}
+        {% if object.why_3 %}<div class="value"><strong>3. Por qué?</strong> {{ object.why_3 }}</div>{% endif %}
+        {% if object.why_4 %}<div class="value"><strong>4. Por qué?</strong> {{ object.why_4 }}</div>{% endif %}
+        {% if object.why_5 %}<div class="value"><strong>5. Por qué?</strong> {{ object.why_5 }}</div>{% endif %}
+        <div class="value" style="margin-top: 5px;"><strong>Causa Raíz:</strong> {{ object.root_cause|default:"-" }}</div>
+    </div>
+
+    <div class="section">
+        <h2>Plan de Acción</h2>
+        
+        <h3>Acciones Inmediatas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Acción</th>
+                    <th>Responsable</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for action in object.actions.all %}
+                    {% if action.action_type == "IMMEDIATE" %}
+                    <tr>
+                        <td>{{ action.description }}</td>
+                        <td>{{ action.responsible|default:"-" }}</td>
+                        <td>{{ action.get_status_display }}</td>
+                    </tr>
+                    {% endif %}
+                {% empty %}
+                <tr><td colspan="3">No hay acciones inmediatas registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Acciones Correctivas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Acción</th>
+                    <th>Responsable</th>
+                    <th>Fecha Limite</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for action in object.actions.all %}
+                    {% if action.action_type == "CORRECTIVE" %}
+                    <tr>
+                        <td>{{ action.description }}</td>
+                        <td>{{ action.responsible|default:"-" }}</td>
+                        <td>{{ action.deadline|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ action.get_status_display }}</td>
+                    </tr>
+                    {% endif %}
+                {% empty %}
+                <tr><td colspan="4">No hay acciones correctivas registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Incidente #{{ object.pk }} | SyH{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Incidente #{{ object.pk }}</h1>
+        <div class="text-muted mt-1">{{ object.visit.company.name }} &bull; {{ object.visit.site.name }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'incidents:list' %}" class="btn btn-outline-secondary">Volver</a>
+        <a href="{% url 'incidents:detail_pdf' object.pk %}" class="btn btn-outline-danger" target="_blank">Exportar PDF</a>
+        <a href="{% url 'incidents:update' object.pk %}" class="btn btn-primary">Editar</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Info Column -->
+    <div class="col-lg-8">
+        
+        <!-- Summary Card -->
+        <div class="card p-3 mb-4">
+            <h5 class="card-title text-primary border-bottom pb-2 mb-3">Resumen del Evento</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="small text-muted fw-bold text-uppercase">Fecha y Hora</label>
+                    <div class="fs-5">{{ object.incident_date|date:"d/m/Y" }} <span class="text-muted fs-6">{{ object.incident_time|default:"" }}</span></div>
+                </div>
+                <div class="col-md-6">
+                     <label class="small text-muted fw-bold text-uppercase">Tipo de Suceso</label>
+                     <div class="fs-5">{{ object.get_incident_type_display }}</div>
+                </div>
+                <div class="col-md-6">
+                     <label class="small text-muted fw-bold text-uppercase">Ubicación / Sector</label>
+                     <div>{{ object.sector.name|default:object.sector_text }}</div>
+                </div>
+                 <div class="col-md-6">
+                     <label class="small text-muted fw-bold text-uppercase">Nivel de Riesgo</label>
+                     <div>
+                        {% if object.risk_level == "CRITICAL" %}
+                            <span class="badge bg-risk">Crítico</span>
+                        {% elif object.risk_level == "HIGH" %}
+                            <span class="badge bg-warning">Alto</span>
+                        {% elif object.risk_level == "MEDIUM" %}
+                            <span class="badge bg-warning">Medio</span>
+                        {% else %}
+                            <span class="badge bg-safe">Bajo</span>
+                        {% endif %}
+                     </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                 <label class="small text-muted fw-bold text-uppercase">Descripción</label>
+                 <div class="bg-light p-3 rounded border-0 text-dark">
+                     {{ object.description|linebreaksbr }}
+                 </div>
+            </div>
+        </div>
+
+        <!-- 5 Whys -->
+        <div class="card p-3 mb-4">
+            <h5 class="card-title text-primary border-bottom pb-2 mb-3">Análisis Causal (5 Porqués)</h5>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush section-list">
+                    {% if object.why_1 %}<li class="list-group-item px-0 border-0"><strong class="text-muted me-2">1.</strong> {{ object.why_1 }}</li>{% endif %}
+                    {% if object.why_2 %}<li class="list-group-item px-0 border-0"><strong class="text-muted me-2">2.</strong> {{ object.why_2 }}</li>{% endif %}
+                    {% if object.why_3 %}<li class="list-group-item px-0 border-0"><strong class="text-muted me-2">3.</strong> {{ object.why_3 }}</li>{% endif %}
+                    {% if object.why_4 %}<li class="list-group-item px-0 border-0"><strong class="text-muted me-2">4.</strong> {{ object.why_4 }}</li>{% endif %}
+                    {% if object.why_5 %}<li class="list-group-item px-0 border-0"><strong class="text-muted me-2">5.</strong> {{ object.why_5 }}</li>{% endif %}
+                </ul>
+                {% if not object.why_1 %}
+                    <p class="text-muted fst-italic">No se ha realizado el análisis de causa raíz.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <h4 class="h5 mb-3 text-secondary">Plan de Acción</h4>
+        
+        <!-- Immediate Actions -->
+        <div class="card p-3 mb-4 border-start border-4 border-warning">
+            <h6 class="text-warning text-uppercase ls-1 fw-bold mb-3">Acciones Inmediatas</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-borderless align-middle mb-0">
+                    <thead class="text-muted border-bottom">
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Responsable</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in object.actions.all %}
+                            {% if a.action_type == "IMMEDIATE" %}
+                            <tr>
+                                <td class="py-2">{{ a.description }}</td>
+                                <td class="py-2"><span class="badge bg-light text-dark border fw-normal">{{ a.owner_name }}</span></td>
+                                <td class="py-2"><span class="badge bg-light text-dark fw-bold border">{{ a.get_status_display }}</span></td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted fst-italic py-2">No hay acciones inmediatas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Corrective Actions -->
+        <div class="card p-3 mb-4 border-start border-4 border-primary">
+            <h6 class="text-primary text-uppercase ls-1 fw-bold mb-3">Acciones Correctivas</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-borderless align-middle mb-0">
+                    <thead class="text-muted border-bottom">
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Fecha Cierre</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in object.actions.all %}
+                            {% if a.action_type == "CORRECTIVE" %}
+                            <tr>
+                                <td class="py-2">{{ a.description }}</td>
+                                <td class="py-2">{{ a.closure_date|default:"-" }}</td>
+                                <td class="py-2"><span class="badge bg-light text-dark fw-bold border">{{ a.get_status_display }}</span></td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted fst-italic py-2">No hay acciones correctivas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Side Column -->
+    <div class="col-lg-4">
+        <!-- People Card -->
+        <div class="card p-3 mb-4">
+             <h5 class="card-title text-secondary border-bottom pb-2 mb-3">Personas</h5>
+             
+             <div class="mb-3">
+                 <label class="small text-muted fw-bold text-uppercase d-block">Operario Involucrado</label>
+                 <span class="fs-6 text-dark">{{ object.operator_name|default:"-" }}</span>
+                 {% if object.operator_position %}
+                 <span class="d-block small text-muted">{{ object.operator_position }}</span>
+                 {% endif %}
+             </div>
+             
+             <div>
+                 <label class="small text-muted fw-bold text-uppercase d-block">Responsable</label>
+                 <span class="fs-6 text-dark">{{ object.responsible_name|default:"-" }}</span>
+                 {% if object.responsible_role %}
+                 <span class="d-block small text-muted">{{ object.responsible_role }}</span>
+                 {% endif %}
+             </div>
+        </div>
+
+        <!-- Evidence -->
+        <div class="card p-3 mb-4">
+            <h5 class="card-title text-secondary border-bottom pb-2 mb-3">Evidencia</h5>
+            {% if object.attachments.exists %}
+                <div class="d-flex flex-column gap-3">
+                    {% for att in object.attachments.all %}
+                    <div class="d-flex align-items-center gap-2 p-2 border rounded">
+                         <div class="flex-shrink-0 text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark-image" viewBox="0 0 16 16">
+                              <path d="M6.502 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                              <path d="M14 14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5V14zM4 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2a1 1 0 0 1-1-1V2H4z"/>
+                            </svg>
+                         </div>
+                         <div class="text-truncate flex-grow-1">
+                             <a href="{{ att.file.url }}" target="_blank" class="text-decoration-none text-dark d-block text-truncate">
+                                 {{ att.caption|default:"Ver adjunto..." }}
+                             </a>
+                         </div>
+                         <a href="{{ att.file.url }}" target="_blank" class="btn btn-sm btn-light border">
+                             &darr;
+                         </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small fst-italic">No hay archivos adjuntos.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

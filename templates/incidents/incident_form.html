@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Incidente | SyH{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2">{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Incidente</h1>
+        <p class="text-muted">Completá los detalles del incidente paso a paso.</p>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+        <div class="alert alert-danger shadow-sm">
+            <strong>Atención:</strong> Por favor revisá los errores marcados abajo.
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <!-- 1. Detalles de Visita -->
+    <div class="card p-3">
+        <div class="form-section-title">
+            <span class="form-section-number">1</span> Detalles de Visita e Incidente
+        </div>
+        <div class="card-body pt-0">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Visita (Auditoría) *</label>
+                    {% render_field form.visit class="form-select" %}
+                    <small class="text-muted d-block mt-1">¿En qué visita se detectó?</small>
+                    <div class="text-danger small">{{ form.visit.errors }}</div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Fecha del Suceso *</label>
+                    {% render_field form.incident_date class="form-control" type="date" %}
+                    <div class="text-danger small">{{ form.incident_date.errors }}</div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Hora</label>
+                    {% render_field form.incident_time class="form-control" type="time" %}
+                    <div class="text-danger small">{{ form.incident_time.errors }}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                     <label class="form-label">Tipo de Suceso *</label>
+                     {% render_field form.incident_type class="form-select" %}
+                     <div class="text-danger small">{{ form.incident_type.errors }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha Investigación</label>
+                    {% render_field form.investigation_date class="form-control" type="date" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Ubicacion -->
+    <div class="card p-3">
+        <div class="form-section-title">
+            <span class="form-section-number">2</span> Ubicación y Tarea
+        </div>
+        <div class="card-body pt-0">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Sector (Lista)</label>
+                    {% render_field form.sector class="form-select" %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Sector (Otro)</label>
+                    {% render_field form.sector_text class="form-control" placeholder="Escribí si no está en la lista" %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tarea que realizaba</label>
+                {% render_field form.task_performed class="form-control" placeholder="Describí brevemente la tarea..." %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Descripcion -->
+    <div class="card p-3">
+        <div class="form-section-title">
+            <span class="form-section-number">3</span> Descripción
+        </div>
+        <div class="card-body pt-0">
+             <div class="mb-3">
+                <label class="form-label">Relato detallado del evento *</label>
+                {% render_field form.description class="form-control" rows="5" placeholder="¿Qué pasó? ¿Cómo pasó?" %}
+                <div class="text-danger small">{{ form.description.errors }}</div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mt-3 mb-3">Persona Involucrada (Operario)</h6>
+                    <div class="mb-2">
+                        <label class="small text-muted">Nombre</label>
+                         {% render_field form.operator_name class="form-control" %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary mt-3 mb-3">Responsable Directo</h6>
+                     <div class="mb-2">
+                        <label class="small text-muted">Nombre</label>
+                         {% render_field form.responsible_name class="form-control" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Riesgo y 5 Porques -->
+    <div class="card p-3">
+        <div class="form-section-title">
+            <span class="form-section-number">4</span> Riesgo y Causa Raíz
+        </div>
+        <div class="card-body pt-0">
+            <div class="mb-4">
+                 <label class="form-label fw-bold">Nivel de Riesgo *</label>
+                 {% render_field form.risk_level class="form-select" %}
+            </div>
+
+            <h6 class="text-muted text-uppercase small ls-1 mb-3">Metodología 5 Porqués (Causa Raíz)</h6>
+            <div class="alert alert-light border">
+                <div class="mb-2">
+                    <label class="small fw-bold">1. ¿Por qué sucedió?</label>
+                    {% render_field form.why_1 class="form-control" %}
+                </div>
+                <div class="mb-2">
+                    <label class="small fw-bold">2. ¿Por qué?</label>
+                    {% render_field form.why_2 class="form-control" %}
+                </div>
+                <div class="mb-2">
+                    <label class="small fw-bold">3. ¿Por qué?</label>
+                    {% render_field form.why_3 class="form-control" %}
+                </div>
+                <!-- 4 & 5 hidden on mobile? No, keep it simple but maybe smaller margin -->
+                <div class="mb-2">
+                    <label class="small fw-bold">4. ¿Por qué?</label>
+                    {% render_field form.why_4 class="form-control" %}
+                </div>
+                <div class="mb-2">
+                    <label class="small fw-bold">5. ¿Por qué? (Causa Raíz)</label>
+                    {% render_field form.why_5 class="form-control" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Acciones -->
+    <div class="card p-3">
+        <div class="form-section-title">
+            <span class="form-section-number">5</span> Acciones
+        </div>
+        <div class="card-body pt-0">
+            <!-- Immediate -->
+            <h6 class="text-warning mb-3">Acciones Inmediatas (Contención)</h6>
+            {{ immediate_formset.management_form }}
+            <div class="table-responsive mb-4">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 200px;">Descripción</th>
+                            <th>Responsable</th>
+                            <th>Estado</th>
+                             <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in immediate_formset %}
+                            {{ form.id }} {{ form.action_type.as_hidden }}
+                            <tr>
+                                <td>{% render_field form.description class="form-control" placeholder="Acción..." %}</td>
+                                <td>{% render_field form.owner_name class="form-control" placeholder="Nombre" %}</td>
+                                <td>{% render_field form.status class="form-select" %}</td>
+                                <td>{% if immediate_formset.can_delete %}{{ form.DELETE }}{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Corrective -->
+            <h6 class="text-primary mb-3">Acciones Correctivas (Prevención)</h6>
+            {{ corrective_formset.management_form }}
+             <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 200px;">Descripción</th>
+                            <th>Responsable</th>
+                            <th>Estado</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in corrective_formset %}
+                            {{ form.id }} {{ form.action_type.as_hidden }}
+                            <tr>
+                                <td>{% render_field form.description class="form-control" placeholder="Acción..." %}</td>
+                                <td>{% render_field form.owner_name class="form-control" placeholder="Nombre" %}</td>
+                                <td>{% render_field form.status class="form-select" %}</td>
+                                <td>{% if corrective_formset.can_delete %}{{ form.DELETE }}{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+     <!-- 6. Evidencia -->
+    <div class="card p-3 mb-5">
+        <div class="form-section-title">
+            <span class="form-section-number">6</span> Evidencias
+        </div>
+        <div class="card-body pt-0">
+             {{ attachment_formset.management_form }}
+             {% for form in attachment_formset %}
+                {{ form.id }}
+                <div class="row border-bottom py-2 align-items-center">
+                    <div class="col-md-5">
+                        <label class="small text-muted">Archivo</label>
+                        {% render_field form.file class="form-control form-control-sm" %}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="small text-muted">Título</label>
+                        {% render_field form.caption class="form-control form-control-sm" placeholder="Foto del lugar..." %}
+                    </div>
+                    <div class="col-md-2 text-center">
+                        {% if attachment_formset.can_delete %}
+                           <small>Borrar</small> {{ form.DELETE }}
+                        {% endif %}
+                    </div>
+                </div>
+             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="fixed-bottom bg-white border-top p-3 d-flex justify-content-end gap-2 shadow-lg" style="z-index: 1000;">
+        <a href="{% url 'incidents:list' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary px-5 fw-bold">Guardar Incidente</button>
+    </div>
+    <!-- Padding for fixed bottom -->
+    <div style="height: 80px;"></div>
+
+</form>
+{% endblock %}

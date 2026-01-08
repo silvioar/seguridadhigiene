@@ -1,0 +1,204 @@
+/* Modern Color Palette & Variables */
+:root {
+    --primary-color: #2c3e50;    /* Dark Blue/Gray - Structure */
+    --secondary-color: #95a5a6;  /* Gray - Neutral details */
+    --accent-color: #3498db;     /* Blue - Primary actions */
+    --success-color: #27ae60;    /* Green - Done/Safe */
+    --warning-color: #f1c40f;    /* Yellow - In Progress */
+    --danger-color: #c0392b;     /* Red - Risk/Attention */
+    --background-color: #f8f9fa; /* Soft off-white */
+    --surface-color: #ffffff;    /* White cards */
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --border-radius-sm: 8px;
+    --border-radius-lg: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--surface-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+/* Navigation Base */
+.navbar-custom {
+    background-color: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-custom .navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.navbar-custom .nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+    color: var(--accent-color);
+    background-color: rgba(52, 152, 219, 0.05);
+    border-radius: var(--border-radius-sm);
+}
+
+/* Modern Buttons */
+.btn {
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.btn-outline-secondary {
+    border-color: #dfe6e9;
+    color: var(--text-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background-color: #dfe6e9;
+    color: var(--text-primary);
+}
+
+/* Dashboard KPI Cards */
+.kpi-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.kpi-title {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Forms - Clean & Step-by-Step feel */
+.form-section-title {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #ecf0f1;
+    display: flex;
+    align-items: center;
+}
+
+.form-section-number {
+    background-color: var(--accent-color);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-right: 10px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: var(--border-radius-sm);
+    border: 1px solid #dfe6e9;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+/* Touches for Mobile */
+@media (max-width: 768px) {
+    .btn {
+        width: 100%; /* Full width buttons on mobile */
+        margin-bottom: 0.5rem;
+    }
+    
+    .navbar-toggler {
+        border: none;
+    }
+    
+    .kpi-value {
+        font-size: 2rem;
+    }
+}
+
+/* Status Badges */
+.badge-status {
+    padding: 0.5em 1em;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
+.bg-safe { background-color: rgba(39, 174, 96, 0.15); color: var(--success-color); }
+.bg-warning { background-color: rgba(241, 196, 15, 0.15); color: #d35400; } /* Darker text for visibility */
+.bg-risk { background-color: rgba(192, 57, 43, 0.15); color: var(--danger-color); }

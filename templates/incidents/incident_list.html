@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Incidentes | SyH{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Incidentes</h1>
+    <a href="{% url 'incidents:create' %}" class="btn btn-primary shadow-sm">
+        <span class="fs-5 align-middle">+</span> Nuevo
+    </a>
+</div>
+
+<!-- Simple Filters -->
+<div class="card p-3 mb-4 bg-white border-0 shadow-sm">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-6 col-md-3">
+            <select name="risk_level" class="form-select form-select-sm border-light bg-light text-muted">
+                <option value="">Nivel de Riesgo...</option>
+                <option value="LOW" {% if request.GET.risk_level == "LOW" %}selected{% endif %}>Bajo</option>
+                <option value="MEDIUM" {% if request.GET.risk_level == "MEDIUM" %}selected{% endif %}>Medio</option>
+                <option value="HIGH" {% if request.GET.risk_level == "HIGH" %}selected{% endif %}>Alto</option>
+                <option value="CRITICAL" {% if request.GET.risk_level == "CRITICAL" %}selected{% endif %}>Crítico</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <select name="company" class="form-select form-select-sm border-light bg-light text-muted">
+                <option value="">Empresa...</option>
+                {% for c in companies %}
+                <option value="{{ c.name }}" {% if request.GET.company == c.name %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <select name="site" class="form-select form-select-sm border-light bg-light text-muted">
+                <option value="">Obra...</option>
+                {% for s in sites %}
+                <option value="{{ s.name }}" {% if request.GET.site == s.name %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+             <input type="date" name="date_from" class="form-control form-control-sm border-light bg-light text-muted" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-outline-primary px-3">Filtrar</button>
+            {% if request.GET %}
+                <a href="{% url 'incidents:list' %}" class="btn btn-sm btn-link text-muted text-decoration-none">Limpiar</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Incident Cards List -->
+<div class="row">
+    {% for incident in object_list %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <a href="{% url 'incidents:detail' incident.pk %}" class="text-decoration-none text-dark">
+            <div class="card h-100 incident-card hover-shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="text-muted small">{{ incident.incident_date|date:"d/m/Y" }}</span>
+                            <h5 class="card-title mb-0 mt-1 text-primary text-truncate" style="max-width: 200px;">
+                                {{ incident.visit.site.name }}
+                            </h5>
+                            <small class="text-muted">{{ incident.visit.company.name }}</small>
+                        </div>
+                        
+                        <!-- Risk Badge -->
+                        {% if incident.risk_level == "CRITICAL" %}
+                            <span class="badge bg-risk">Crítico</span>
+                        {% elif incident.risk_level == "HIGH" %}
+                            <span class="badge bg-warning">Alto</span>
+                        {% elif incident.risk_level == "MEDIUM" %}
+                            <span class="badge bg-warning">Medio</span>
+                        {% else %}
+                            <span class="badge bg-safe">Bajo</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                         <span class="badge border text-muted fw-normal">{{ incident.get_incident_type_display }}</span>
+                         {% if incident.sector %}
+                             <small class="ms-2 text-muted">{{ incident.sector.name }}</small>
+                         {% elif incident.sector_text %}
+                             <small class="ms-2 text-muted">{{ incident.sector_text }}</small>
+                         {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div class="text-muted small">
+                             Responsable: <strong>{{ incident.responsible_name|default:"-" }}</strong>
+                        </div>
+                        <i class="text-primary bi bi-arrow-right">Ver ></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">No hay incidentes registrados.</h4>
+        <p class="text-muted">Utilizá el botón "Nuevo" para comenzar.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav class="mt-4 mb-5">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link border-0 text-muted" href="?page={{ page_obj.previous_page_number }}">&laquo; Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link border-0 text-dark fw-bold">{{ page_obj.number }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link border-0 text-muted" href="?page={{ page_obj.next_page_number }}">Siguiente &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
