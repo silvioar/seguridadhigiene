@@ -17,7 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from core.views import DashboardView, DashboardPDFView
+from core.views import (
+    DashboardView, DashboardPDFView,
+    CompanyCreateView, SiteCreateView, SectorCreateView
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -25,5 +28,11 @@ urlpatterns = [
     path("audits/", include("audits.urls")),
     path("", DashboardView.as_view(), name="dashboard"),
     path("dashboard/pdf/", DashboardPDFView.as_view(), name="dashboard_pdf"),
+    
+    # Quick Add Views
+    path("companies/new/", CompanyCreateView.as_view(), name="company_create"),
+    path("sites/new/", SiteCreateView.as_view(), name="site_create"),
+    path("sectors/new/", SectorCreateView.as_view(), name="sector_create"),
+
     path("incidents/", include("incidents.urls")),
 ]

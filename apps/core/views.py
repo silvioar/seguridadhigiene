@@ -281,3 +281,75 @@ class DashboardPDFView(DashboardView):
             response['Content-Disposition'] = content
             return response
         return HttpResponse("Not found")
+
+
+# --- Quick Add Views ---
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+from .models import Company, Site, Sector
+
+class CompanyCreateView(LoginRequiredMixin, CreateView):
+    model = Company
+    fields = ["name", "tax_id", "notes"]
+    template_name = "core/quick_add_form.html"
+    
+    def get_success_url(self):
+        # Return to the previous page (audit form) if possible, or dashboard
+        next_url = self.request.GET.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("dashboard")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["title"] = "Nueva Empresa"
+        return ctx
+
+
+class SiteCreateView(LoginRequiredMixin, CreateView):
+    model = Site
+    fields = ["company", "name", "address", "city"]
+    template_name = "core/quick_add_form.html"
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Pre-select company if passed in GET
+        company_id = self.request.GET.get("company")
+        if company_id:
+            initial["company"] = company_id
+        return initial
+
+    def get_success_url(self):
+        next_url = self.request.GET.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("dashboard")
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["title"] = "Nueva Obra / Sitio"
+        return ctx
+
+
+class SectorCreateView(LoginRequiredMixin, CreateView):
+    model = Sector
+    fields = ["company", "name"]
+    template_name = "core/quick_add_form.html"
+
+    def get_initial(self):
+        initial = super().get_initial()
+        company_id = self.request.GET.get("company")
+        if company_id:
+            initial["company"] = company_id
+        return initial
+
+    def get_success_url(self):
+        next_url = self.request.GET.get("next")
+        if next_url:
+            return next_url
+        return reverse_lazy("dashboard")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["title"] = "Nuevo Sector"
+        return ctx
